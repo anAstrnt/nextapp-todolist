@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
 import { signOut } from "firebase/auth";
-import { collection, doc, onSnapshot, query, setDoc } from "firebase/firestore";
+import {
+  Timestamp,
+  addDoc,
+  collection,
+  onSnapshot,
+  query,
+} from "firebase/firestore";
+import { nanoid } from "nanoid";
+import Link from "next/link";
 
 const TodoTitle = () => {
   const [title, setTitle] = useState("");
@@ -9,23 +17,20 @@ const TodoTitle = () => {
 
   // TodoのTitleをFirestoreのドキュメントとして格納
   const handleAddTitle = async () => {
-    await setDoc(doc(db, "posts", title), {
-      id: "",
-      link: "",
-      todo: "",
-      status: "",
-      detail: "",
-      deadline: "",
-      timestamp: "",
+    const shortId = nanoid(5);
+    await addDoc(collection(db, "title"), {
+      linkId: shortId,
+      title: title,
+      timestamp: Timestamp.now(),
     });
     setTitle("");
   };
 
-  // Firestoreのドキュメント(Title)を取得
+  // Firestoreのコレクション(Title)を取得
   useEffect(() => {
-    const q = query(collection(db, "posts"));
+    const q = query(collection(db, "title"));
     const unsub = onSnapshot(q, (querySnapshot) => {
-      setTitles(querySnapshot.docs.map((doc) => doc.id));
+      setTitles(querySnapshot.docs.map((doc) => doc.data().title));
     });
     return unsub;
   }, [title]);
@@ -56,14 +61,16 @@ const TodoTitle = () => {
       </div>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-7">
         {titles.map((todoTitle) => (
+          // <Link href={`/feed/${}`}>
           <div
             key={todoTitle}
-            className="bg-pink-200 h-48 w-48 text-center align-middle relative"
+            className="bg-stone-300 h-48 w-48 text-center align-middle relative"
           >
             <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 tracking-widest text-lg">
               {todoTitle}
             </p>
           </div>
+          // </Link>
         ))}
       </div>
     </div>
