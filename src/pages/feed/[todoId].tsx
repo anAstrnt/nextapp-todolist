@@ -1,13 +1,21 @@
 import React from "react";
 import { useRouter } from "next/router";
 import DeleteButton from "../../../public/delete.svg";
+import ArrowUturn from "../../../public/arrowUturn.svg";
+import Link from "next/link";
 
 export default function Page() {
   const router = useRouter();
+
   return (
     <>
       <div className="mx-20">
-        <h1 className="text-6xl">Title : {router.query.todoId}</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-5xl">Title : {router.query.todoId}</h1>
+          <Link href="/" className="p-2 m-5 rounded-full bg-slate-50">
+            <ArrowUturn className="h-8 w-8" />
+          </Link>
+        </div>
         <div className="flex justify-center my-10">
           <input className="border border-stone-300 mr-10 w-96 h-10 pl-3" type="text" />
           <button className="bg-stone-300 h-10 w-20">追加</button>
