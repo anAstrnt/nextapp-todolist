@@ -1,18 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
 import { signOut } from "firebase/auth";
-import {
-  Timestamp,
-  addDoc,
-  collection,
-  onSnapshot,
-  query,
-} from "firebase/firestore";
+import { Timestamp, addDoc, collection, onSnapshot, query } from "firebase/firestore";
 import { nanoid } from "nanoid";
 import Link from "next/link";
 
 const TodoTitle = () => {
   const [title, setTitle] = useState("");
+  const [links, setLinks] = useState<string[]>([]);
   const [titles, setTitles] = useState<string[]>([]);
 
   // TodoのTitleをFirestoreのドキュメントとして格納
@@ -31,9 +26,15 @@ const TodoTitle = () => {
     const q = query(collection(db, "title"));
     const unsub = onSnapshot(q, (querySnapshot) => {
       setTitles(querySnapshot.docs.map((doc) => doc.data().title));
+      setLinks(querySnapshot.docs.map((doc) => doc.data().linkId));
     });
     return unsub;
   }, [title]);
+
+  // タイトルに紐づいたリンクをmap内で循環させる
+  const getLinkId = (index: number): string => {
+    return links[index % links.length];
+  };
 
   // サインアウトの処理
   const signOutAction = () => {
@@ -60,17 +61,14 @@ const TodoTitle = () => {
         </button>
       </div>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-7">
-        {titles.map((todoTitle) => (
-          // <Link href={`/feed/${}`}>
-          <div
-            key={todoTitle}
-            className="bg-stone-300 h-48 w-48 text-center align-middle relative"
-          >
-            <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 tracking-widest text-lg">
-              {todoTitle}
-            </p>
-          </div>
-          // </Link>
+        {titles.map((todoTitle, index) => (
+          <Link key={todoTitle} href={`/feed/${getLinkId(index)}`}>
+            <div className="bg-stone-300 h-48 w-48 text-center align-middle relative">
+              <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 tracking-widest text-lg">
+                {todoTitle}
+              </p>
+            </div>
+          </Link>
         ))}
       </div>
     </div>
