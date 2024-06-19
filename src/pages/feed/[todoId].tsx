@@ -1,17 +1,38 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import DeleteButton from "../../../public/delete.svg";
 import ArrowUturn from "../../../public/arrowUturn.svg";
 import Link from "next/link";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function Page() {
+  const [title, setTitle] = useState("");
+  const [linkId, setLinkId] = useState<string | string[]>("");
   const router = useRouter();
+
+  useEffect(() => {
+    if (router.query.todoId === undefined) {
+      return;
+    }
+    setLinkId(router.query.todoId);
+  }, [router.query.todoId]);
+
+  useEffect(() => {
+    const q = query(collection(db, "title"), where("linkId", "==", linkId));
+    const unsub = onSnapshot(q, (querySnapshot) => {
+      querySnapshot.forEach((doc) => {
+        setTitle(doc.data().title);
+      });
+      return () => unsub();
+    });
+  }, [linkId]);
 
   return (
     <>
       <div className="mx-20">
         <div className="flex justify-between items-center">
-          <h1 className="text-5xl">Title : {router.query.todoId}</h1>
+          <h1 className="text-5xl">{title}</h1>
           <Link href="/" className="p-2 m-5 rounded-full bg-slate-50">
             <ArrowUturn className="h-8 w-8" />
           </Link>
