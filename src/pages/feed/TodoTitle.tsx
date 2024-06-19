@@ -29,7 +29,7 @@ const TodoTitle = () => {
       setLinks(querySnapshot.docs.map((doc) => doc.data().linkId));
     });
     return unsub;
-  }, [title]);
+  }, []);
 
   // タイトルに紐づいたリンクをmap内で循環させる
   const getLinkId = (index: number): string => {
