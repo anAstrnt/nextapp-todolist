@@ -35,6 +35,7 @@ interface TodosTypes {
 
 export default function Page() {
   const router = useRouter();
+  const [searchStateTodo, setSearchStateTodo] = useState("");
   const [title, setTitle] = useState("");
   const [titleDocId, setTitleDocId] = useState("");
   const [linkId, setLinkId] = useState<string>("");
@@ -116,6 +117,24 @@ export default function Page() {
     });
     return () => unsub();
   }, [titleDocId]);
+
+  const todoStateFilter = () => {
+    if (searchStateTodo === "全て") {
+      return todos;
+    }
+    if (searchStateTodo === "着手中") {
+      return todos.filter((todo) => todo.state === "着手中");
+    }
+    if (searchStateTodo === "未着手") {
+      return todos.filter((todo) => todo.state === "未着手");
+    }
+    if (searchStateTodo === "完了") {
+      return todos.filter((todo) => todo.state === "完了");
+    }
+    return todos;
+  };
+
+  // todos.filter((todo) => todo.state === "着手中");
 
   // todo内でステータスを変更（着手中）
   const todoStateChangeStart = async (todoDocId: string) => {
@@ -215,23 +234,24 @@ export default function Page() {
             追加
           </button>
         </div>
+
         <div className="my-5">
-          <button>
+          <button onClick={() => setSearchStateTodo("全て")}>
             <span className="bg-stone-300 inline-block h-10 w-20 text-center content-center mr-5">
               全て
             </span>
           </button>
-          <button>
+          <button onClick={() => setSearchStateTodo("着手中")}>
             <span className="bg-rose-300 inline-block h-10 w-20 text-center content-center mr-5">
               着手中
             </span>
           </button>
-          <button>
+          <button onClick={() => setSearchStateTodo("未着手")}>
             <span className="bg-yellow-300 inline-block h-10 w-20 text-center content-center mr-5">
               未着手
             </span>
           </button>
-          <button>
+          <button onClick={() => setSearchStateTodo("完了")}>
             <span className="bg-blue-300 inline-block h-10 w-20 text-center content-center">
               完了
             </span>
@@ -240,7 +260,7 @@ export default function Page() {
 
         {/* todo表示欄 */}
         <div className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-7">
-          {todos.map((fetchedTodo) => (
+          {todoStateFilter().map((fetchedTodo) => (
             <div
               className={
                 fetchedTodo.state === "着手中"
