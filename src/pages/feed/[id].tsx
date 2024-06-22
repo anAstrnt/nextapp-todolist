@@ -13,7 +13,9 @@ import {
   onSnapshot,
   orderBy,
   query,
+  setDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { nanoid } from "nanoid";
@@ -26,6 +28,9 @@ interface TodosTypes {
   detail: string;
   deadline: string;
   timestamp: string;
+  isTodoEditable: boolean;
+  isDeadlineEditable: boolean;
+  isDetailEditable: boolean;
 }
 
 export default function Page() {
@@ -33,11 +38,8 @@ export default function Page() {
   const [title, setTitle] = useState("");
   const [linkId, setLinkId] = useState<string>("");
   const [todo, setTodo] = useState("");
-  const [todoEditable, setTodoEditable] = useState("");
-  const [detail, setDetail] = useState("");
-  const [detailEditable, setDetailEditable] = useState("");
   const [deadline, setDeadline] = useState("");
-  const [deadlineEditable, setDeadlineEditable] = useState("");
+  const [detail, setDetail] = useState("");
   const [todos, setTodos] = useState<TodosTypes[]>([
     {
       todoDocId: "",
@@ -47,6 +49,9 @@ export default function Page() {
       detail: "",
       deadline: "",
       timestamp: "",
+      isTodoEditable: true,
+      isDeadlineEditable: true,
+      isDetailEditable: true,
     },
   ]);
   const [titleDocId, setTitleDocId] = useState("");
@@ -106,6 +111,9 @@ export default function Page() {
           detail: doc.data().detail,
           deadline: doc.data().deadline,
           timestamp: doc.data().timestamp,
+          isTodoEditable: true,
+          isDeadlineEditable: true,
+          isDetailEditable: true,
         }))
       );
     });
@@ -116,6 +124,38 @@ export default function Page() {
   const handleTodoDelete = async (todoDocId: string) => {
     await deleteDoc(doc(db, "title", titleDocId, "todo", todoDocId));
   };
+
+  const handleEditTodo = (todoDocId: string) => {
+    setTodos((prevTodos) =>
+      prevTodos.map((todo) =>
+        todo.todoDocId === todoDocId
+          ? { ...todo, isTodoEditable: !todo.isTodoEditable }
+          : todo
+      )
+    );
+  };
+
+  const handleEditDeadline = (todoDocId: string) => {
+    setTodos((prevTodos) =>
+      prevTodos.map((todo) =>
+        todo.todoDocId === todoDocId
+          ? { ...todo, isDeadlineEditable: !todo.isDeadlineEditable }
+          : todo
+      )
+    );
+  };
+
+  const handleEditDetail = (todoDocId: string) => {
+    setTodos((prevTodos) =>
+      prevTodos.map((todo) =>
+        todo.todoDocId === todoDocId
+          ? { ...todo, isDetailEditable: !todo.isDetailEditable }
+          : todo
+      )
+    );
+  };
+
+  const updateDeadline = () => {};
 
   return (
     <>
@@ -170,27 +210,57 @@ export default function Page() {
                     </button>
                   </div>
                 </div>
+
                 <div className="flex items-center">
                   <span className="m-2 inline-block">todo_..</span>
-                  <Pencil className="h-3 w-3" />
+                  <button onClick={() => handleEditTodo(fetchedTodo.todoDocId)}>
+                    <Pencil className="h-3 w-3" />
+                  </button>
                 </div>
-                <p className="tracking-widest text-sm p-2 bg-slate-50 rounded-lg w-full h-8">
-                  {fetchedTodo.todo}
-                </p>
+                {fetchedTodo.isTodoEditable ? (
+                  <p className="tracking-widest text-sm p-2 bg-slate-50 rounded-lg w-full h-8">
+                    {fetchedTodo.todo}
+                  </p>
+                ) : (
+                  <input className="text-sm p-2 rounded-lg w-full h-8 border border-stone-400" />
+                )}
+
                 <div className="flex items-center">
                   <span className="m-2 inline-block">deadline_..</span>
-                  <Pencil className="h-3 w-3" />
+                  <button onClick={() => handleEditDeadline(fetchedTodo.todoDocId)}>
+                    <Pencil className="h-3 w-3" />
+                  </button>
                 </div>
-                <p className="tracking-widest text-sm p-2 bg-slate-50 rounded-lg w-full h-8">
-                  {fetchedTodo.deadline}
-                </p>
+                {fetchedTodo.isDeadlineEditable ? (
+                  <p className="tracking-widest text-sm p-2 bg-slate-50 rounded-lg w-full h-8">
+                    {fetchedTodo.deadline}
+                  </p>
+                ) : (
+                  <input
+                    type="date"
+                    min="2024-06-01"
+                    max="2030-3-31"
+                    value={deadline}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      updateDeadline()
+                    }
+                    className="text-sm p-2 rounded-lg w-full h-8 border border-stone-400"
+                  />
+                )}
+
                 <div className="flex items-center">
                   <span className="m-2 inline-block">detail_..</span>
-                  <Pencil className="h-3 w-3" />
+                  <button onClick={() => handleEditDetail(fetchedTodo.todoDocId)}>
+                    <Pencil className="h-3 w-3" />
+                  </button>
                 </div>
-                <p className="tracking-widest text-sm p-2 bg-slate-50 rounded-lg w-full h-20">
-                  {fetchedTodo.detail}
-                </p>
+                {fetchedTodo.isDetailEditable ? (
+                  <p className="tracking-widest text-sm p-2 bg-slate-50 rounded-lg w-full h-20">
+                    {fetchedTodo.detail}
+                  </p>
+                ) : (
+                  <input className="text-sm p-2 rounded-lg w-full h-8 border border-stone-400" />
+                )}
               </div>
             </div>
           ))}
