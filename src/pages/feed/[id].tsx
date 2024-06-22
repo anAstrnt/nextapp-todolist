@@ -13,9 +13,8 @@ import {
   onSnapshot,
   orderBy,
   query,
-  setDoc,
+  updateDoc,
   where,
-  writeBatch,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { nanoid } from "nanoid";
@@ -36,16 +35,15 @@ interface TodosTypes {
 export default function Page() {
   const router = useRouter();
   const [title, setTitle] = useState("");
+  const [titleDocId, setTitleDocId] = useState("");
   const [linkId, setLinkId] = useState<string>("");
   const [todo, setTodo] = useState("");
-  const [deadline, setDeadline] = useState("");
-  const [detail, setDetail] = useState("");
   const [todos, setTodos] = useState<TodosTypes[]>([
     {
       todoDocId: "",
       todoId: "",
       todo: "",
-      state: "未着",
+      state: "未着手",
       detail: "",
       deadline: "",
       timestamp: "",
@@ -54,8 +52,6 @@ export default function Page() {
       isDetailEditable: true,
     },
   ]);
-  const [titleDocId, setTitleDocId] = useState("");
-  const [todoDocId, setTodoDocId] = useState("");
 
   // タイトルを画面左上に表示させる処理
   useEffect(() => {
@@ -125,6 +121,7 @@ export default function Page() {
     await deleteDoc(doc(db, "title", titleDocId, "todo", todoDocId));
   };
 
+  // todoの編集画面を表示
   const handleEditTodo = (todoDocId: string) => {
     setTodos((prevTodos) =>
       prevTodos.map((todo) =>
@@ -135,6 +132,7 @@ export default function Page() {
     );
   };
 
+  // deadlineの編集画面を表示
   const handleEditDeadline = (todoDocId: string) => {
     setTodos((prevTodos) =>
       prevTodos.map((todo) =>
@@ -145,6 +143,7 @@ export default function Page() {
     );
   };
 
+  // detailの編集画面を表示
   const handleEditDetail = (todoDocId: string) => {
     setTodos((prevTodos) =>
       prevTodos.map((todo) =>
@@ -155,7 +154,23 @@ export default function Page() {
     );
   };
 
-  const updateDeadline = () => {};
+  // todoを編集
+  const updateTodo = async (todoDocId: string, newTodo: string) => {
+    const todoRef = doc(db, "title", titleDocId, "todo", todoDocId);
+    await updateDoc(todoRef, { todo: newTodo });
+  };
+
+  // deadlineを編集
+  const updateDeadline = async (todoDocId: string, newDeadline: string) => {
+    const todoRef = doc(db, "title", titleDocId, "todo", todoDocId);
+    await updateDoc(todoRef, { deadline: newDeadline });
+  };
+
+  // detailを編集
+  const updateDetail = async (todoDocId: string, newDetail: string) => {
+    const todoRef = doc(db, "title", titleDocId, "todo", todoDocId);
+    await updateDoc(todoRef, { detail: newDetail });
+  };
 
   return (
     <>
@@ -211,6 +226,7 @@ export default function Page() {
                   </div>
                 </div>
 
+                {/* Todo欄 */}
                 <div className="flex items-center">
                   <span className="m-2 inline-block">todo_..</span>
                   <button onClick={() => handleEditTodo(fetchedTodo.todoDocId)}>
@@ -222,9 +238,25 @@ export default function Page() {
                     {fetchedTodo.todo}
                   </p>
                 ) : (
-                  <input className="text-sm p-2 rounded-lg w-full h-8 border border-stone-400" />
+                  <input
+                    type="text"
+                    value={fetchedTodo.todo}
+                    onChange={(e) => {
+                      const newTodo = e.target.value;
+                      setTodos((prevTodos) =>
+                        prevTodos.map((todo) =>
+                          todo.todoDocId === fetchedTodo.todoDocId
+                            ? { ...todo, todo: newTodo }
+                            : todo
+                        )
+                      );
+                    }}
+                    onBlur={() => updateTodo(fetchedTodo.todoDocId, fetchedTodo.todo)}
+                    className="text-sm p-2 rounded-lg w-full h-8 border border-stone-400"
+                  />
                 )}
 
+                {/* deadline欄 */}
                 <div className="flex items-center">
                   <span className="m-2 inline-block">deadline_..</span>
                   <button onClick={() => handleEditDeadline(fetchedTodo.todoDocId)}>
@@ -240,14 +272,25 @@ export default function Page() {
                     type="date"
                     min="2024-06-01"
                     max="2030-3-31"
-                    value={deadline}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      updateDeadline()
+                    value={fetchedTodo.deadline}
+                    onChange={(e) => {
+                      const newDeadline = e.target.value;
+                      setTodos((prevTodos) =>
+                        prevTodos.map((todo) =>
+                          todo.todoDocId === fetchedTodo.todoDocId
+                            ? { ...todo, deadline: newDeadline }
+                            : todo
+                        )
+                      );
+                    }}
+                    onBlur={() =>
+                      updateDeadline(fetchedTodo.todoDocId, fetchedTodo.deadline)
                     }
                     className="text-sm p-2 rounded-lg w-full h-8 border border-stone-400"
                   />
                 )}
 
+                {/* detail欄 */}
                 <div className="flex items-center">
                   <span className="m-2 inline-block">detail_..</span>
                   <button onClick={() => handleEditDetail(fetchedTodo.todoDocId)}>
@@ -259,7 +302,21 @@ export default function Page() {
                     {fetchedTodo.detail}
                   </p>
                 ) : (
-                  <input className="text-sm p-2 rounded-lg w-full h-8 border border-stone-400" />
+                  <textarea
+                    value={fetchedTodo.detail}
+                    onChange={(e) => {
+                      const newDetail = e.target.value;
+                      setTodos((prevTodos) =>
+                        prevTodos.map((todo) =>
+                          todo.todoDocId === fetchedTodo.todoDocId
+                            ? { ...todo, detail: newDetail }
+                            : todo
+                        )
+                      );
+                    }}
+                    onBlur={() => updateDetail(fetchedTodo.todoDocId, fetchedTodo.detail)}
+                    className="text-sm p-2 rounded-lg w-full h-20 border border-stone-400 whitespace-pre-line"
+                  />
                 )}
               </div>
             </div>
