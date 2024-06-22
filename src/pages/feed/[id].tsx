@@ -8,6 +8,8 @@ import {
   Timestamp,
   addDoc,
   collection,
+  deleteDoc,
+  doc,
   onSnapshot,
   orderBy,
   query,
@@ -17,6 +19,7 @@ import { db } from "@/lib/firebase";
 import { nanoid } from "nanoid";
 
 interface TodosTypes {
+  todoDocId: string;
   todoId: string;
   todo: string;
   state: string;
@@ -30,12 +33,24 @@ export default function Page() {
   const [title, setTitle] = useState("");
   const [linkId, setLinkId] = useState<string>("");
   const [todo, setTodo] = useState("");
+  const [todoEditable, setTodoEditable] = useState("");
   const [detail, setDetail] = useState("");
+  const [detailEditable, setDetailEditable] = useState("");
   const [deadline, setDeadline] = useState("");
+  const [deadlineEditable, setDeadlineEditable] = useState("");
   const [todos, setTodos] = useState<TodosTypes[]>([
-    { todoId: "", todo: "", state: "未着", detail: "", deadline: "", timestamp: "" },
+    {
+      todoDocId: "",
+      todoId: "",
+      todo: "",
+      state: "未着",
+      detail: "",
+      deadline: "",
+      timestamp: "",
+    },
   ]);
   const [titleDocId, setTitleDocId] = useState("");
+  const [todoDocId, setTodoDocId] = useState("");
 
   // タイトルを画面左上に表示させる処理
   useEffect(() => {
@@ -68,7 +83,7 @@ export default function Page() {
       linkId: linkId,
       todoId: shortId,
       todo: todo,
-      state: "未着",
+      state: "未着手",
       detail: "",
       deadline: "",
       timestamp: Timestamp.now(),
@@ -84,6 +99,7 @@ export default function Page() {
     const unsub = onSnapshot(q, (querySnapshot) => {
       setTodos(
         querySnapshot.docs.map((doc) => ({
+          todoDocId: doc.id,
           todoId: doc.data().todoId,
           todo: doc.data().todo,
           state: doc.data().state,
@@ -96,9 +112,15 @@ export default function Page() {
     return () => unsub();
   }, [titleDocId]);
 
+  // todoを削除する処理
+  const handleTodoDelete = async (todoDocId: string) => {
+    await deleteDoc(doc(db, "title", titleDocId, "todo", todoDocId));
+  };
+
   return (
     <>
       <div className="mx-20">
+        {/* todo入力欄 */}
         <div className="flex justify-between items-center">
           <h1 className="text-5xl">{title}</h1>
           <Link href="/" className="p-2 m-5 rounded-full bg-slate-50">
@@ -127,6 +149,8 @@ export default function Page() {
             完了
           </span>
         </div>
+
+        {/* todo表示欄 */}
         <div className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-7">
           {todos.map((fetchedTodo) => (
             <div className="bg-rose-300 h-88 w-56">
@@ -138,7 +162,10 @@ export default function Page() {
                     <button className="border rounded-full text-sm bg-blue-300 h-5 w-5 mr-2" />
                   </div>
                   <div>
-                    <button className="p-2 rounded-full bg-slate-50">
+                    <button
+                      onClick={() => handleTodoDelete(fetchedTodo.todoDocId)}
+                      className="p-2 rounded-full bg-slate-50"
+                    >
                       <DeleteButton className="h-4 w-4" />
                     </button>
                   </div>
