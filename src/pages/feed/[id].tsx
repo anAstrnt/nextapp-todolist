@@ -10,6 +10,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   onSnapshot,
   orderBy,
   query,
@@ -116,6 +117,27 @@ export default function Page() {
     return () => unsub();
   }, [titleDocId]);
 
+  // todo内でステータスを変更（着手中）
+  const todoStateChangeStart = async (todoDocId: string) => {
+    const todoRef = doc(db, "title", titleDocId, "todo", todoDocId);
+    const docSnap = await getDoc(todoRef);
+    docSnap.exists()
+      ? await updateDoc(todoRef, { state: "着手中" })
+      : console.error(todoDocId);
+  };
+
+  // todo内でステータスを変更（未着手）
+  const todoStateChangeNoStart = async (todoDocId: string) => {
+    const todoRef = doc(db, "title", titleDocId, "todo", todoDocId);
+    await updateDoc(todoRef, { state: "未着手" });
+  };
+
+  // todo内でステータスを変更（完了）
+  const todoStateChangeComplete = async (todoDocId: string) => {
+    const todoRef = doc(db, "title", titleDocId, "todo", todoDocId);
+    await updateDoc(todoRef, { state: "完了" });
+  };
+
   // todoを削除する処理
   const handleTodoDelete = async (todoDocId: string) => {
     await deleteDoc(doc(db, "title", titleDocId, "todo", todoDocId));
@@ -194,27 +216,57 @@ export default function Page() {
           </button>
         </div>
         <div className="my-5">
-          <span className="bg-rose-300 inline-block h-10 w-20 text-center content-center mr-5">
-            着手中
-          </span>
-          <span className="bg-yellow-300 inline-block h-10 w-20 text-center content-center mr-5">
-            未着手
-          </span>
-          <span className="bg-blue-300 inline-block h-10 w-20 text-center content-center">
-            完了
-          </span>
+          <button>
+            <span className="bg-stone-300 inline-block h-10 w-20 text-center content-center mr-5">
+              全て
+            </span>
+          </button>
+          <button>
+            <span className="bg-rose-300 inline-block h-10 w-20 text-center content-center mr-5">
+              着手中
+            </span>
+          </button>
+          <button>
+            <span className="bg-yellow-300 inline-block h-10 w-20 text-center content-center mr-5">
+              未着手
+            </span>
+          </button>
+          <button>
+            <span className="bg-blue-300 inline-block h-10 w-20 text-center content-center">
+              完了
+            </span>
+          </button>
         </div>
 
         {/* todo表示欄 */}
         <div className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-7">
           {todos.map((fetchedTodo) => (
-            <div className="bg-rose-300 h-88 w-56">
+            <div
+              className={
+                fetchedTodo.state === "着手中"
+                  ? "bg-rose-300 h-88 w-56"
+                  : fetchedTodo.state === "未着手"
+                  ? "bg-yellow-300 h-88 w-56"
+                  : fetchedTodo.state === "完了"
+                  ? "bg-blue-300 h-88 w-56"
+                  : ""
+              }
+            >
               <div className="p-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <button className="border rounded-full text-sm bg-rose-300 h-5 w-5 mr-2" />
-                    <button className="border rounded-full text-sm bg-yellow-300 h-5 w-5 mr-2" />
-                    <button className="border rounded-full text-sm bg-blue-300 h-5 w-5 mr-2" />
+                    <button
+                      onClick={() => todoStateChangeStart(fetchedTodo.todoDocId)}
+                      className="border rounded-full text-sm bg-rose-300 h-5 w-5 mr-2"
+                    />
+                    <button
+                      onClick={() => todoStateChangeNoStart(fetchedTodo.todoDocId)}
+                      className="border rounded-full text-sm bg-yellow-300 h-5 w-5 mr-2"
+                    />
+                    <button
+                      onClick={() => todoStateChangeComplete(fetchedTodo.todoDocId)}
+                      className="border rounded-full text-sm bg-blue-300 h-5 w-5 mr-2"
+                    />
                   </div>
                   <div>
                     <button
