@@ -1,14 +1,37 @@
 import React, { useEffect, useState } from "react";
 import { auth, db } from "../../lib/firebase";
 import { signOut } from "firebase/auth";
-import { Timestamp, addDoc, collection, onSnapshot, query } from "firebase/firestore";
+import {
+  Timestamp,
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+} from "firebase/firestore";
 import { nanoid } from "nanoid";
 import Link from "next/link";
+import DeleteButton from "../../../public/delete.svg";
+
+interface TitleType {
+  titleDocId: string;
+  linkId: string;
+  title: string;
+  timestamp: string;
+}
 
 const TodoTitle = () => {
   const [title, setTitle] = useState("");
-  const [links, setLinks] = useState<string[]>([]);
-  const [titles, setTitles] = useState<string[]>([]);
+  const [titles, setTitles] = useState<TitleType[]>([
+    {
+      titleDocId: "",
+      linkId: "",
+      title: "",
+      timestamp: "",
+    },
+  ]);
 
   // TodoのTitleをFirestoreのドキュメントとして格納
   const handleAddTitle = async () => {
@@ -23,22 +46,27 @@ const TodoTitle = () => {
 
   // Firestoreのコレクション(Title)を取得
   useEffect(() => {
-    const q = query(collection(db, "title"));
-    const unsub = onSnapshot(q, (querySnapshot) => {
-      setTitles(querySnapshot.docs.map((doc) => doc.data().title));
-      setLinks(querySnapshot.docs.map((doc) => doc.data().linkId));
-    });
-    return unsub;
+    const q = query(collection(db, "title"), orderBy("timestamp", "desc"));
+    const unsub = onSnapshot(q, (querySnapshot) =>
+      setTitles(
+        querySnapshot.docs.map((doc) => ({
+          titleDocId: doc.id,
+          linkId: doc.data().linkId,
+          title: doc.data().title,
+          timestamp: doc.data().timestamp,
+        }))
+      )
+    );
+    return () => unsub();
   }, []);
-
-  // タイトルに紐づいたリンクをmap内で循環させる
-  const getLinkId = (index: number): string => {
-    return links[index % links.length];
-  };
 
   // サインアウトの処理
   const signOutAction = () => {
     signOut(auth);
+  };
+
+  const handleTitleDelete = async (titleDocId: string) => {
+    await deleteDoc(doc(db, "title", titleDocId));
   };
 
   return (
@@ -61,14 +89,22 @@ const TodoTitle = () => {
         </button>
       </div>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-7">
-        {titles.map((todoTitle, index) => (
-          <Link key={todoTitle} href={`/feed/${getLinkId(index)}`}>
-            <div className="bg-stone-300 h-48 w-48 text-center align-middle relative">
-              <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 tracking-widest text-lg">
-                {todoTitle}
-              </p>
-            </div>
-          </Link>
+        {titles.map((fetchedTitle) => (
+          <div key={fetchedTitle.titleDocId} className="relative">
+            <Link href={`/feed/${fetchedTitle.linkId}`}>
+              <div className="bg-stone-300 h-48 w-48 text-center align-middle relative">
+                <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 tracking-widest text-lg">
+                  {fetchedTitle.title}
+                </p>
+              </div>
+            </Link>
+            <button
+              onClick={() => handleTitleDelete(fetchedTitle.titleDocId)}
+              className="absolute mb-4 p-2 rounded-full bg-slate-50 bottom-0 right-0"
+            >
+              <DeleteButton className="h-4 w-4" />
+            </button>
+          </div>
         ))}
       </div>
     </div>

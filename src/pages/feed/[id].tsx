@@ -118,6 +118,7 @@ export default function Page() {
     return () => unsub();
   }, [titleDocId]);
 
+  // フィルター機能（state毎のTodoを表示）
   const todoStateFilter = () => {
     if (searchStateTodo === "全て") {
       return todos;
@@ -133,8 +134,6 @@ export default function Page() {
     }
     return todos;
   };
-
-  // todos.filter((todo) => todo.state === "着手中");
 
   // todo内でステータスを変更（着手中）
   const todoStateChangeStart = async (todoDocId: string) => {
