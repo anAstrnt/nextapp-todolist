@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import DeleteButton from "../../../public/delete.svg";
 import ArrowUturn from "../../../public/arrowUturn.svg";
+import Pencil from "../../../public/pencil.svg";
 import Link from "next/link";
 import {
   Timestamp,
@@ -51,19 +52,14 @@ export default function Page() {
     const unsub = onSnapshot(q, (querySnapshot) => {
       querySnapshot.forEach((doc) => {
         setTitle(doc.data().title);
+        // 次の処理でTitle毎にサブコレクションTodoを追加したいため、ついでにdoc.idを取得しとく
         setTitleDocId(doc.id);
       });
       return () => unsub();
     });
   }, [linkId]);
 
-  // TodoのTitleをFirestoreのドキュメントとして格納
-  // useEffect(() => {
-  //   const titleData = collection(db, "title");
-  //   const q = query(titleData);
-  //   const unSub=onSnapshot(q,(querys))
-  // });
-
+  // 現在開いているドキュメントのサブコレクションにTodoを追加する処理
   const addNewTodo = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.preventDefault;
     const shortId = nanoid(10);
@@ -84,7 +80,6 @@ export default function Page() {
   useEffect(() => {
     if (!titleDocId) return;
     const todoData = collection(db, "title", titleDocId, "todo");
-    // const q = query(collection(db, "todo"), where("linkId", "==", linkId));
     const q = query(todoData, orderBy("timestamp", "desc"));
     const unsub = onSnapshot(q, (querySnapshot) => {
       setTodos(
@@ -132,28 +127,44 @@ export default function Page() {
             完了
           </span>
         </div>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-7">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-7">
           {todos.map((fetchedTodo) => (
-            <div className="bg-rose-300 h-52 w-52 relative">
+            <div className="bg-rose-300 h-88 w-56">
               <div className="p-4">
-                <div className="flex justify-center">
-                  <button className="rounded-lg text-sm bg-slate-50 p-2 mr-2">
-                    着手
-                  </button>
-                  <button className="rounded-lg text-sm bg-slate-50 p-2 mr-2">
-                    未着
-                  </button>
-                  <button className="rounded-lg text-sm bg-slate-50 p-2 mr-2">
-                    完了
-                  </button>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <button className="border rounded-full text-sm bg-rose-300 h-5 w-5 mr-2" />
+                    <button className="border rounded-full text-sm bg-yellow-300 h-5 w-5 mr-2" />
+                    <button className="border rounded-full text-sm bg-blue-300 h-5 w-5 mr-2" />
+                  </div>
+                  <div>
+                    <button className="p-2 rounded-full bg-slate-50">
+                      <DeleteButton className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-                <p className="tracking-widest text-base">{fetchedTodo.todo}</p>
-                <p className="tracking-widest text-base">{fetchedTodo.deadline}</p>
-                <p className="tracking-widest text-base">{fetchedTodo.detail}</p>
+                <div className="flex items-center">
+                  <span className="m-2 inline-block">todo_..</span>
+                  <Pencil className="h-3 w-3" />
+                </div>
+                <p className="tracking-widest text-sm p-2 bg-slate-50 rounded-lg w-full h-8">
+                  {fetchedTodo.todo}
+                </p>
+                <div className="flex items-center">
+                  <span className="m-2 inline-block">deadline_..</span>
+                  <Pencil className="h-3 w-3" />
+                </div>
+                <p className="tracking-widest text-sm p-2 bg-slate-50 rounded-lg w-full h-8">
+                  {fetchedTodo.deadline}
+                </p>
+                <div className="flex items-center">
+                  <span className="m-2 inline-block">detail_..</span>
+                  <Pencil className="h-3 w-3" />
+                </div>
+                <p className="tracking-widest text-sm p-2 bg-slate-50 rounded-lg w-full h-20">
+                  {fetchedTodo.detail}
+                </p>
               </div>
-              <button className="p-2 absolute right-0 bottom-0 m-5 rounded-full bg-slate-50">
-                <DeleteButton className="h-4 w-4" />
-              </button>
             </div>
           ))}
         </div>
