@@ -34,6 +34,11 @@ const Auth = () => {
       });
   };
 
+  const handleSignUp = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    e.preventDefault();
+    setIsLogin(!isLogin);
+  };
+
   return (
     <div className="flex justify-center items-center h-screen">
       <form className="shadow-xl px-20 py-20 bg-slate-50">
@@ -83,9 +88,12 @@ const Auth = () => {
             </button>
           )}
 
-          <span onClick={() => setIsLogin(!isLogin)} className="text-center pt-5">
+          <button
+            onClick={(e) => handleSignUp(e)}
+            className="text-center pt-5 pointer-events-auto"
+          >
             {isLogin ? "新規登録はこちら" : "ログイン画面に戻る"}
-          </span>
+          </button>
         </div>
       </form>
     </div>
