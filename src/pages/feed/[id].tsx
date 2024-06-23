@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import DeleteButton from "../../../public/delete.svg";
 import ArrowUturn from "../../../public/arrowUturn.svg";
-import Pencil from "../../../public/pencil.svg";
 import Link from "next/link";
 import {
   Timestamp,
@@ -19,19 +17,10 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { nanoid } from "nanoid";
-
-interface TodosTypes {
-  todoDocId: string;
-  todoId: string;
-  todo: string;
-  state: string;
-  detail: string;
-  deadline: string;
-  timestamp: string;
-  isTodoEditable: boolean;
-  isDeadlineEditable: boolean;
-  isDetailEditable: boolean;
-}
+import { TodosTypes } from "@/pages/types/TodosTypes";
+import TodoInput from "../components/TodoInput";
+import TodoFilters from "../components/TodoFilters";
+import TodoList from "../components/TodoList";
 
 export default function Page() {
   const router = useRouter();
@@ -135,25 +124,13 @@ export default function Page() {
     return todos;
   };
 
-  // todo内でステータスを変更（着手中）
-  const todoStateChangeStart = async (todoDocId: string) => {
+  // todo内でステータスを変更
+  const handleTodoStateChange = async (todoDocId: string, newState: string) => {
     const todoRef = doc(db, "title", titleDocId, "todo", todoDocId);
     const docSnap = await getDoc(todoRef);
     docSnap.exists()
-      ? await updateDoc(todoRef, { state: "着手中" })
+      ? await updateDoc(todoRef, { state: newState })
       : console.error(todoDocId);
-  };
-
-  // todo内でステータスを変更（未着手）
-  const todoStateChangeNoStart = async (todoDocId: string) => {
-    const todoRef = doc(db, "title", titleDocId, "todo", todoDocId);
-    await updateDoc(todoRef, { state: "未着手" });
-  };
-
-  // todo内でステータスを変更（完了）
-  const todoStateChangeComplete = async (todoDocId: string) => {
-    const todoRef = doc(db, "title", titleDocId, "todo", todoDocId);
-    await updateDoc(todoRef, { state: "完了" });
   };
 
   // todoを削除する処理
@@ -161,55 +138,23 @@ export default function Page() {
     await deleteDoc(doc(db, "title", titleDocId, "todo", todoDocId));
   };
 
-  // todoの編集画面を表示
-  const handleEditTodo = (todoDocId: string) => {
+  // Todoの編集画面を表示
+  const handleTodoChange = (
+    todoDocId: string,
+    field: string,
+    newValue: string | boolean
+  ) => {
     setTodos((prevTodos) =>
       prevTodos.map((todo) =>
-        todo.todoDocId === todoDocId
-          ? { ...todo, isTodoEditable: !todo.isTodoEditable }
-          : todo
-      )
-    );
-  };
-
-  // deadlineの編集画面を表示
-  const handleEditDeadline = (todoDocId: string) => {
-    setTodos((prevTodos) =>
-      prevTodos.map((todo) =>
-        todo.todoDocId === todoDocId
-          ? { ...todo, isDeadlineEditable: !todo.isDeadlineEditable }
-          : todo
-      )
-    );
-  };
-
-  // detailの編集画面を表示
-  const handleEditDetail = (todoDocId: string) => {
-    setTodos((prevTodos) =>
-      prevTodos.map((todo) =>
-        todo.todoDocId === todoDocId
-          ? { ...todo, isDetailEditable: !todo.isDetailEditable }
-          : todo
+        todo.todoDocId === todoDocId ? { ...todo, [field]: newValue } : todo
       )
     );
   };
 
   // todoを編集
-  const updateTodo = async (todoDocId: string, newTodo: string) => {
+  const handleTodoUpdate = async (todoDocId: string, field: string, newValue: string) => {
     const todoRef = doc(db, "title", titleDocId, "todo", todoDocId);
-    await updateDoc(todoRef, { todo: newTodo });
-  };
-
-  // deadlineを編集
-  const updateDeadline = async (todoDocId: string, newDeadline: string) => {
-    const todoRef = doc(db, "title", titleDocId, "todo", todoDocId);
-    await updateDoc(todoRef, { deadline: newDeadline });
-  };
-
-  // detailを編集
-  const updateDetail = async (todoDocId: string, newDetail: string) => {
-    const todoRef = doc(db, "title", titleDocId, "todo", todoDocId);
-    await updateDoc(todoRef, { detail: newDetail });
+    await updateDoc(todoRef, { [field]: newValue });
   };
 
   return (
@@ -222,177 +167,17 @@ export default function Page() {
             <ArrowUturn className="h-8 w-8" />
           </Link>
         </div>
-        <div className="flex justify-center my-10">
-          <input
-            value={todo}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTodo(e.target.value)}
-            className="border border-stone-300 mr-10 w-96 h-10 pl-3"
-            type="text"
-          />
-          <button onClick={(e) => addNewTodo(e)} className="bg-stone-300 h-10 w-20">
-            追加
-          </button>
-        </div>
-
-        <div className="my-5">
-          <button onClick={() => setSearchStateTodo("全て")}>
-            <span className="bg-stone-300 inline-block h-10 w-20 text-center content-center mr-5">
-              全て
-            </span>
-          </button>
-          <button onClick={() => setSearchStateTodo("着手中")}>
-            <span className="bg-rose-300 inline-block h-10 w-20 text-center content-center mr-5">
-              着手中
-            </span>
-          </button>
-          <button onClick={() => setSearchStateTodo("未着手")}>
-            <span className="bg-yellow-300 inline-block h-10 w-20 text-center content-center mr-5">
-              未着手
-            </span>
-          </button>
-          <button onClick={() => setSearchStateTodo("完了")}>
-            <span className="bg-blue-300 inline-block h-10 w-20 text-center content-center">
-              完了
-            </span>
-          </button>
-        </div>
-
-        {/* todo表示欄 */}
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-7">
-          {todoStateFilter().map((fetchedTodo) => (
-            <div
-              className={
-                fetchedTodo.state === "着手中"
-                  ? "bg-rose-300 h-88 w-56"
-                  : fetchedTodo.state === "未着手"
-                  ? "bg-yellow-300 h-88 w-56"
-                  : fetchedTodo.state === "完了"
-                  ? "bg-blue-300 h-88 w-56"
-                  : ""
-              }
-            >
-              <div className="p-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <button
-                      onClick={() => todoStateChangeStart(fetchedTodo.todoDocId)}
-                      className="border rounded-full text-sm bg-rose-300 h-5 w-5 mr-2"
-                    />
-                    <button
-                      onClick={() => todoStateChangeNoStart(fetchedTodo.todoDocId)}
-                      className="border rounded-full text-sm bg-yellow-300 h-5 w-5 mr-2"
-                    />
-                    <button
-                      onClick={() => todoStateChangeComplete(fetchedTodo.todoDocId)}
-                      className="border rounded-full text-sm bg-blue-300 h-5 w-5 mr-2"
-                    />
-                  </div>
-                  <div>
-                    <button
-                      onClick={() => handleTodoDelete(fetchedTodo.todoDocId)}
-                      className="p-2 rounded-full bg-slate-50"
-                    >
-                      <DeleteButton className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Todo欄 */}
-                <div className="flex items-center">
-                  <span className="m-2 inline-block">todo_..</span>
-                  <button onClick={() => handleEditTodo(fetchedTodo.todoDocId)}>
-                    <Pencil className="h-3 w-3" />
-                  </button>
-                </div>
-                {fetchedTodo.isTodoEditable ? (
-                  <p className="tracking-widest text-sm p-2 bg-slate-50 rounded-lg w-full h-8">
-                    {fetchedTodo.todo}
-                  </p>
-                ) : (
-                  <input
-                    type="text"
-                    value={fetchedTodo.todo}
-                    onChange={(e) => {
-                      const newTodo = e.target.value;
-                      setTodos((prevTodos) =>
-                        prevTodos.map((todo) =>
-                          todo.todoDocId === fetchedTodo.todoDocId
-                            ? { ...todo, todo: newTodo }
-                            : todo
-                        )
-                      );
-                    }}
-                    onBlur={() => updateTodo(fetchedTodo.todoDocId, fetchedTodo.todo)}
-                    className="text-sm p-2 rounded-lg w-full h-8 border border-stone-400"
-                  />
-                )}
-
-                {/* deadline欄 */}
-                <div className="flex items-center">
-                  <span className="m-2 inline-block">deadline_..</span>
-                  <button onClick={() => handleEditDeadline(fetchedTodo.todoDocId)}>
-                    <Pencil className="h-3 w-3" />
-                  </button>
-                </div>
-                {fetchedTodo.isDeadlineEditable ? (
-                  <p className="tracking-widest text-sm p-2 bg-slate-50 rounded-lg w-full h-8">
-                    {fetchedTodo.deadline}
-                  </p>
-                ) : (
-                  <input
-                    type="date"
-                    min="2024-06-01"
-                    max="2030-3-31"
-                    value={fetchedTodo.deadline}
-                    onChange={(e) => {
-                      const newDeadline = e.target.value;
-                      setTodos((prevTodos) =>
-                        prevTodos.map((todo) =>
-                          todo.todoDocId === fetchedTodo.todoDocId
-                            ? { ...todo, deadline: newDeadline }
-                            : todo
-                        )
-                      );
-                    }}
-                    onBlur={() =>
-                      updateDeadline(fetchedTodo.todoDocId, fetchedTodo.deadline)
-                    }
-                    className="text-sm p-2 rounded-lg w-full h-8 border border-stone-400"
-                  />
-                )}
-
-                {/* detail欄 */}
-                <div className="flex items-center">
-                  <span className="m-2 inline-block">detail_..</span>
-                  <button onClick={() => handleEditDetail(fetchedTodo.todoDocId)}>
-                    <Pencil className="h-3 w-3" />
-                  </button>
-                </div>
-                {fetchedTodo.isDetailEditable ? (
-                  <p className="tracking-widest text-sm p-2 bg-slate-50 rounded-lg w-full h-20">
-                    {fetchedTodo.detail}
-                  </p>
-                ) : (
-                  <textarea
-                    value={fetchedTodo.detail}
-                    onChange={(e) => {
-                      const newDetail = e.target.value;
-                      setTodos((prevTodos) =>
-                        prevTodos.map((todo) =>
-                          todo.todoDocId === fetchedTodo.todoDocId
-                            ? { ...todo, detail: newDetail }
-                            : todo
-                        )
-                      );
-                    }}
-                    onBlur={() => updateDetail(fetchedTodo.todoDocId, fetchedTodo.detail)}
-                    className="text-sm p-2 rounded-lg w-full h-20 border border-stone-400 whitespace-pre-line"
-                  />
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        <TodoInput todo={todo} setTodo={setTodo} addNewTodo={addNewTodo} />
+        {/* todoのステータス毎の絞り込み */}
+        <TodoFilters setSearchStateTodo={setSearchStateTodo} />
+        {/* todoの表示欄 */}
+        <TodoList
+          todoStateFilter={todoStateFilter()}
+          handleTodoStateChange={handleTodoStateChange}
+          handleTodoDelete={handleTodoDelete}
+          handleTodoChange={handleTodoChange}
+          handleTodoUpdate={handleTodoUpdate}
+        />
       </div>
     </>
   );

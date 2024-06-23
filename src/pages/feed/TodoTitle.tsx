@@ -80,6 +80,7 @@ const TodoTitle = () => {
         <h1 className="text-4xl mb-10">Todo Title Page</h1>
         <input
           value={title}
+          placeholder="titleを追加してください"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
           className="border border-stone-300 mr-10 w-96 h-10 pl-3"
           type="text"
