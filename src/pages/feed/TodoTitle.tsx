@@ -14,6 +14,7 @@ import {
 import { nanoid } from "nanoid";
 import Link from "next/link";
 import DeleteButton from "../../../public/delete.svg";
+import useAuthGuard from "../hooks/useAuthGuard";
 
 interface TitleType {
   titleDocId: string;
@@ -23,6 +24,7 @@ interface TitleType {
 }
 
 const TodoTitle = () => {
+  useAuthGuard();
   const [title, setTitle] = useState("");
   const [titles, setTitles] = useState<TitleType[]>([
     {

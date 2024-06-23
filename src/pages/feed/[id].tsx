@@ -22,8 +22,10 @@ import TodoInput from "../components/TodoInput";
 import TodoFilters from "../components/TodoFilters";
 import TodoList from "../components/TodoList";
 import TodoSort from "../components/TodoSort";
+import useAuthGuard from "../hooks/useAuthGuard";
 
 export default function Page() {
+  useAuthGuard();
   const router = useRouter();
   const [searchStateTodo, setSearchStateTodo] = useState("");
   const [sort, setSort] = useState<"desc" | "asc">("desc");
