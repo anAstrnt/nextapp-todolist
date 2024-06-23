@@ -21,10 +21,13 @@ import { TodosTypes } from "@/pages/types/TodosTypes";
 import TodoInput from "../components/TodoInput";
 import TodoFilters from "../components/TodoFilters";
 import TodoList from "../components/TodoList";
+import TodoSort from "../components/TodoSort";
 
 export default function Page() {
   const router = useRouter();
   const [searchStateTodo, setSearchStateTodo] = useState("");
+  const [sort, setSort] = useState<"desc" | "asc">("desc");
+  const [sortOption, setSortOption] = useState<"timestamp" | "deadline">("timestamp");
   const [title, setTitle] = useState("");
   const [titleDocId, setTitleDocId] = useState("");
   const [linkId, setLinkId] = useState<string>("");
@@ -87,7 +90,7 @@ export default function Page() {
   useEffect(() => {
     if (!titleDocId) return;
     const todoData = collection(db, "title", titleDocId, "todo");
-    const q = query(todoData, orderBy("timestamp", "desc"));
+    const q = query(todoData, orderBy(sortOption, sort));
     const unsub = onSnapshot(q, (querySnapshot) => {
       setTodos(
         querySnapshot.docs.map((doc) => ({
@@ -105,7 +108,16 @@ export default function Page() {
       );
     });
     return () => unsub();
-  }, [titleDocId]);
+  }, [titleDocId, sortOption]);
+
+  // ソート機能（timestampかdeadlineを早い順に表示）
+  const handleSortChange = (
+    sortOption: "timestamp" | "deadline",
+    sort: "desc" | "asc"
+  ) => {
+    setSortOption(sortOption);
+    setSort(sort);
+  };
 
   // フィルター機能（state毎のTodoを表示）
   const todoStateFilter = () => {
@@ -168,8 +180,13 @@ export default function Page() {
           </Link>
         </div>
         <TodoInput todo={todo} setTodo={setTodo} addNewTodo={addNewTodo} />
-        {/* todoのステータス毎の絞り込み */}
-        <TodoFilters setSearchStateTodo={setSearchStateTodo} />
+        <div className="flex justify-between items-center">
+          {/* todoの作成日、締切日毎の並べ替え */}
+          <TodoSort handleSortChange={handleSortChange} />
+          {/* todoのステータス毎の絞り込み */}
+          <TodoFilters setSearchStateTodo={setSearchStateTodo} />
+        </div>
+
         {/* todoの表示欄 */}
         <TodoList
           todoStateFilter={todoStateFilter()}
